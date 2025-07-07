@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Text;
 
 
-
 namespace Expense_Tracker.Controllers
 {
 
