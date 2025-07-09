@@ -21,7 +21,6 @@ namespace Expense_Tracker.Controllers
         private readonly ILogger<ApplicationUserController> _logger;
         private readonly IConfiguration _configuration;
 
-
         public ApplicationUserController(ILogger<ApplicationUserController> logger, AppDbContext context, IConfiguration configuration)
         {
             _logger = logger;
@@ -39,10 +38,8 @@ namespace Expense_Tracker.Controllers
                 return BadRequest(ModelState);
             }
 
-
             if (_context.Users.Any(u => u.Username == dto.Username))
                 return BadRequest("Username already exists");
-
 
             var user = new ApplicationUser
             {
@@ -56,7 +53,6 @@ namespace Expense_Tracker.Controllers
 
             return Ok("User registered successfully");
         }
-
 
 
         private string GenerateJwtToken(ApplicationUser user)
@@ -92,6 +88,5 @@ namespace Expense_Tracker.Controllers
             var token = GenerateJwtToken(user);
             return Ok(new { Token = token });
         }
-
     }
 }
