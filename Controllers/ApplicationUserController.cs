@@ -51,7 +51,8 @@ namespace Expense_Tracker.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok("User registered successfully");
+            return Ok(new { message = "User registered successfully" });
+
         }
 
 

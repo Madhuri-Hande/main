@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Expense_Tracker.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250708065355_Initial")]
-    partial class Initial
+    [Migration("20250709092210_Made_Changes_Expense")]
+    partial class Made_Changes_Expense
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,9 +58,6 @@ namespace Expense_Tracker.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("Category")
-                        .HasColumnType("int");
-
                     b.Property<int>("CreatedBy")
                         .HasColumnType("int");
 
@@ -70,6 +67,9 @@ namespace Expense_Tracker.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ExpenseCategoryId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -78,7 +78,60 @@ namespace Expense_Tracker.Migrations
 
                     b.HasKey("ExpenseId");
 
+                    b.HasIndex("ExpenseCategoryId")
+                        .IsUnique();
+
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("Expense_Tracker.Models.ExpenseCategory", b =>
+                {
+                    b.Property<int>("ExpenseCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExpenseCategoryId"));
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExpenseDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpenseType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UpdateBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ExpenseCategoryId");
+
+                    b.ToTable("ExpenseCategories");
+                });
+
+            modelBuilder.Entity("Expense_Tracker.Models.Expense", b =>
+                {
+                    b.HasOne("Expense_Tracker.Models.ExpenseCategory", "Category")
+                        .WithOne("Expense")
+                        .HasForeignKey("Expense_Tracker.Models.Expense", "ExpenseCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Expense_Tracker.Models.ExpenseCategory", b =>
+                {
+                    b.Navigation("Expense")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

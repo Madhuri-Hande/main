@@ -11,7 +11,19 @@ namespace Expense_Tracker.Data
 
         public DbSet<Expense> Expenses { get; set; }
 
-        //public DbSet<ExpenseCategory> Categories { get; set; }
+        public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
+
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+
+            modelBuilder.Entity<Expense>()
+             .HasOne(e => e.Category)
+             .WithOne(c => c.Expense)
+             .HasForeignKey<Expense>(e => e.ExpenseCategoryId);
+
+        }
+
     }
 
 }

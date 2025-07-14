@@ -28,7 +28,7 @@ namespace Expense_Tracker.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("Create Expences")]
+        [HttpPost("CreateExpences")]
         public async Task<IActionResult> CreateExpenses([FromBody] ExpensesDto dto)
         {
             if (!ModelState.IsValid)
@@ -42,9 +42,9 @@ namespace Expense_Tracker.Controllers
 
             var expense = new Expense
             {
-                Category = dto.Category,
-                Amount = dto.Amount,
+                ExpenseCategoryId = dto.ExpenseCategoryId,
                 Description = dto.Description,
+                Amount = dto.Amount,
                 CreatedBy = userId,
                 CreatedDate = DateTime.UtcNow,
             };
@@ -88,7 +88,7 @@ namespace Expense_Tracker.Controllers
             if (expense == null || expense.CreatedBy != userId)
                 return NotFound();
 
-            expense.Category = dto.Category;
+            expense.ExpenseCategoryId = dto.ExpenseCategoryId;
             expense.Amount = dto.Amount;
             expense.Description = dto.Description;
             expense.UpdatedBy = userId;

@@ -14,6 +14,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp",
+    policy => policy
+    .WithOrigins("http://localhost:4200") // Angular dev server
+               .AllowAnyHeader()
+    .AllowAnyMethod());
+});
+
 //builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -80,6 +89,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
+app.UseCors("AllowAngularApp");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSwagger();

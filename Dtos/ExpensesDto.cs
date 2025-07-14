@@ -6,7 +6,7 @@ namespace Expense_Tracker.Dtos
     {
         //public int ExpenseId { get; set; }
 
-        public ExpenseCategory? Category { get; set; }
+        public int ExpenseCategoryId { get; set; }
 
         public decimal Amount { get; set; }
 
