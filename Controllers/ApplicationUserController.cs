@@ -7,54 +7,77 @@ using Expense_Tracker.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
-
+using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace Expense_Tracker.Controllers
 {
-
     [ApiController]
     [Route("api/[controller]")]
-
-    public class ApplicationUserController : Controller
+    public class ApplicationUserController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ApplicationUserController> _logger;
         private readonly IConfiguration _configuration;
 
-        public ApplicationUserController(ILogger<ApplicationUserController> logger, AppDbContext context, IConfiguration configuration)
+        public ApplicationUserController(
+            ILogger<ApplicationUserController> logger,
+            AppDbContext context,
+            IConfiguration configuration)
         {
             _logger = logger;
             _context = context;
             _configuration = configuration;
         }
 
-
         [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            if (_context.Users.Any(u => u.Username == dto.Username))
-                return BadRequest("Username already exists");
-
-            var user = new ApplicationUser
+            try
             {
-                Username = dto.Username,
-                Email = dto.Email,
-                Password = dto.Password
-            };
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
+                    return BadRequest("Username already exists.");
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                var user = new ApplicationUser
+                {
+                    Username = dto.Username,
+                    Email = dto.Email,
+                    Password = HashPassword(dto.Password)
+                };
 
-            return Ok(new { message = "User registered successfully" });
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
+                return Ok(new { message = "User registered successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during user registration.");
+                return StatusCode(500, "An error occurred while registering the user.");
+            }
         }
 
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
+                if (user == null || !VerifyPassword(dto.Password, user.Password))
+                    return Unauthorized("Invalid credentials.");
+
+                var token = GenerateJwtToken(user);
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login.");
+                return StatusCode(500, "An error occurred while logging in.");
+            }
+        }
 
         private string GenerateJwtToken(ApplicationUser user)
         {
@@ -72,22 +95,25 @@ namespace Expense_Tracker.Controllers
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])),
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        private string HashPassword(string password)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
-            if (user == null || user.Password != dto.Password) 
-                return Unauthorized("Invalid credentials");
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(password);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
+        }
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { Token = token });
+        private bool VerifyPassword(string inputPassword, string storedHash)
+        {
+            var inputHash = HashPassword(inputPassword);
+            return inputHash == storedHash;
         }
     }
 }

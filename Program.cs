@@ -18,7 +18,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp",
     policy => policy
-    .WithOrigins("http://localhost:4200") // Angular dev server
+    .WithOrigins("http://localhost:4200") 
                .AllowAnyHeader()
     .AllowAnyMethod());
 });
@@ -28,7 +28,6 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Expense Tracker", Version = "v1" });
 
-    // ?? Add JWT Authentication
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

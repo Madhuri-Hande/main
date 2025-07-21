@@ -1,13 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using Expense_Tracker.Data;
-using Expense_Tracker.Dtos;
-using Expense_Tracker.Models;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Expense_Tracker.Controllers
@@ -19,77 +12,106 @@ namespace Expense_Tracker.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<FilterExpencesController> _logger;
-        private readonly IConfiguration _configuration;
 
-        public FilterExpencesController(ILogger<FilterExpencesController> logger, AppDbContext context, IConfiguration configuration)
+        public FilterExpencesController(ILogger<FilterExpencesController> logger, AppDbContext context)
         {
             _logger = logger;
             _context = context;
-            _configuration = configuration;
         }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out int userId) ? userId : (int?)null;
+        }
+
 
         [HttpGet("GetTotalExpenses")]
         public IActionResult GetTotalExpenses()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
+            try
+            {
+                int? userId = GetCurrentUserId();
 
-            int userId = int.Parse(userIdClaim);
+                if (userId == null)
+                    return Unauthorized("User ID not found in token.");
 
-            decimal total = _context.Expenses
-                .Where(e => e.CreatedBy == userId)
-                .Sum(e => e.Amount);
+                decimal total = _context.Expenses
+                    .Where(e => e.CreatedBy == userId)
+                    .Sum(e => e.Amount);
 
-            return Ok(total);
+                return Ok(new { TotalExpenses = total });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching total expenses.");
+                return StatusCode(500, "An error occurred while processing your request.");
+
+            }
         }
+
 
 
         [HttpGet("GetTotalCategoryWise")]
         public IActionResult GetTotalCategoryWise(int categoryId)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized("User ID not found in token.");
 
-            int userId = int.Parse(userIdClaim);
+                var total = _context.Expenses
+                    .Where(e => e.CreatedBy == userId && e.ExpenseCategoryId == categoryId)
+                    .Sum(e => e.Amount);
 
-            decimal total = _context.Expenses
-                .Where(e => e.ExpenseCategoryId == categoryId)
-                .Sum(e => e.Amount);
+                return Ok(new { CategoryId = categoryId, Total = total });
+            }
+            catch (Exception ex) {
 
-            return Ok(total);
+                _logger.LogError(ex, $"Error occurred while fetching expenses for category {categoryId}.");
+                return StatusCode(500, "An error occurred while processing your request.");
+
+            }
         }
+
 
         [HttpGet("GetExpensesCategoryWise")]
         public IActionResult GetExpensesCategoryWise(int categoryId, DateTime? startDate, DateTime? endDate, decimal? minAmount, decimal? maxAmount, string? keyword)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized("User ID not found in token.");
 
-            int userId = int.Parse(userIdClaim);
+                var query = _context.Expenses
+                    .Where(e => e.ExpenseCategoryId == categoryId && e.CreatedBy == userId);
 
-            var query = _context.Expenses
-                .Where(e => e.ExpenseCategoryId == categoryId && e.CreatedBy == userId);
+                if (startDate.HasValue)
+                    query = query.Where(e => e.CreatedDate >= startDate.Value);
 
-            if (startDate.HasValue)
-                query = query.Where(e => e.CreatedDate >= startDate.Value);
+                if (endDate.HasValue)
+                    query = query.Where(e => e.CreatedDate <= endDate.Value);
 
-            if (endDate.HasValue)
-                query = query.Where(e => e.CreatedDate <= endDate.Value);
+                if (minAmount.HasValue)
+                    query = query.Where(e => e.Amount >= minAmount.Value);
 
-            if (minAmount.HasValue)
-                query = query.Where(e => e.Amount >= minAmount.Value);
+                if (maxAmount.HasValue)
+                    query = query.Where(e => e.Amount <= maxAmount.Value);
 
-            if (maxAmount.HasValue)
-                query = query.Where(e => e.Amount <= maxAmount.Value);
+                if (!string.IsNullOrEmpty(keyword))
+                    query = query.Where(e => e.Description.Contains(keyword));
 
-            if (!string.IsNullOrEmpty(keyword))
-                query = query.Where(e => e.Description.Contains(keyword));
+                return Ok(query.ToList());
+            }
+            catch (Exception ex)
+            {
 
-            return Ok(query.ToList());
+                _logger.LogError(ex, $"Error occurred while fetching expenses for category {categoryId}.");
+                return StatusCode(500, "An error occurred while processing your request.");
+
+            }
         }
-
     }
 }

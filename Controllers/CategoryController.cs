@@ -66,10 +66,10 @@ namespace Expense_Tracker.Controllers
             var category = _context.ExpenseCategories
                 .Where(e => e.CreatedBy == userId)
                 .OrderByDescending(e => e.CreatedDate)
+                .AsNoTracking()
                 .ToList();
 
             return Ok(category);
         }
-
     }
 }
