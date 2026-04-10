@@ -76,9 +76,34 @@ namespace Expense_Tracker.Controllers
 
                 return Ok(expenses);
             }
-            catch(Exception ex) {
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, "Error retrieving expenses.");
                 return StatusCode(500, "An error occurred while retrieving expenses.");
+            }
+        }
+
+
+        [HttpGet("GetExpensesById")]
+        public IActionResult GetExpensesById(int id)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == null)
+                return Unauthorized("User ID not found in token.");
+            try
+            {
+                var expenses = _context.Expenses
+                    .Where(e => e.CreatedBy == userId && e.ExpenseId == id)
+                    .OrderByDescending(e => e.CreatedDate)
+                    .ToList();
+
+                return Ok(expenses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving expenses.");
+                return StatusCode(500, "An error occurred while retrieving expenses by specific id.");
             }
         }
 
@@ -98,7 +123,7 @@ namespace Expense_Tracker.Controllers
                 if (expense == null || expense.CreatedBy != userId)
                     return NotFound();
 
-                expense.ExpenseCategoryId = dto.ExpenseCategoryId;
+               // expense.ExpenseCategoryId = dto.ExpenseCategoryId;
                 expense.Amount = dto.Amount;
                 expense.Description = dto.Description;
                 expense.UpdatedBy = userId;

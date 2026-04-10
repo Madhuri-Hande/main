@@ -12,12 +12,13 @@ namespace Expense_Tracker.Dtos
 
         public string? Description { get; set; }
 
-     //   public int CreatedBy { get; set; }
+        //   public int CreatedBy { get; set; }
 
-      //  public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        //  public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
-     //   public int? UpdatedBy { get; set; }
+        //public int? UpdatedBy { get; set; }
+       // public DateTime UpdateDate { get; set; } 
 
-//        public bool IsDeleted { get; set; } = false;
+        //        public bool IsDeleted { get; set; } = false;
     }
 }

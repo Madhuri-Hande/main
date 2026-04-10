@@ -55,7 +55,7 @@ namespace Expense_Tracker.Controllers
         }
 
         [HttpGet("GetCategory")]
-        public IActionResult GetExpenses()
+        public IActionResult GetCategory()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null)
@@ -64,12 +64,37 @@ namespace Expense_Tracker.Controllers
             int userId = int.Parse(userIdClaim);
 
             var category = _context.ExpenseCategories
-                .Where(e => e.CreatedBy == userId)
                 .OrderByDescending(e => e.CreatedDate)
                 .AsNoTracking()
                 .ToList();
 
             return Ok(category);
         }
+
+        [HttpDelete("DeleteCategory/{id}")]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+                return Unauthorized();
+            try
+            {
+                var category = await _context.ExpenseCategories.FindAsync(id);
+                if (category == null)
+                {
+                    return NotFound();
+                }
+                _context.ExpenseCategories.Remove(category);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Category Deleted successfully" });
+            }
+            catch (Exception Ex)
+            {
+                return StatusCode(500, "An error ocurred while deleting category.");
+            }
+
+        }
     }
+
 }
